@@ -26,13 +26,13 @@ cueTFM is a founding library behind cueART.
 
 A lot has happened before what You see could be gifted to You.
 
-ToDo: Write about the history of cuBeam (2008), cuTFM, fminsearch, flatSurface refraction, poly surface refraction, trip to spain and the time-representation idea, symbolic polyfit, Tim's contribution, efficient PCF, Bristol's version, cueART, dll-isation, pythonisation, and the 2017 revival.
+ToDo: Write about the history of cuBeam (2008), cuTFM, fminsearch, flatSurface refraction, poly surface refraction, trip to spain and the time-representation idea, symbolic polyfit, Tim's factorisation, efficient PCF, peritem surface, Bristol's version, cueART, dll-isation, pythonisation, and the 2017 revival.
 
 
 ## Authors and contributions
 
 * Dr Jerzy Dziewierz - author of the original idea behind beamsim (early 2008), fminsearch, refraction algorithms, original cuTFM, polyfit, and the cueTFM (coeff-enabled TFM). Experimental validation, documentation, presentations, training sessions, consultations e.t.c.; primary go-to person for in-depth questions.
-* Dr Timothy Lardner - contributor to the cueTFM coeff table factorizing method; developer of the .dll and then, the Python interface up until mid-2017. 
+* Dr Timothy Lardner - contributor to the cueTFM coeff table factorizing method; Developer of the .dll and then, the Python interface up until mid-2017. 
 * Dr Ailidh McGilp - debugging, developing of the 3D peritem surface technology. Spreading the word, and first real industrial application.
 * Marcus Ingram - debugging.
 * Professor Anthony Gachagan- long-time mentor. He's responsible for the world not collapsing any sooner.
