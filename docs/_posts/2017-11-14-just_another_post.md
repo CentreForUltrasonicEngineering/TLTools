@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Blogging Like a Hacker
+title: simple test to see if this works or not
 ---
 
 just checking
