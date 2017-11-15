@@ -161,6 +161,7 @@ __global__ void GenerateTimePoints(float* TimeBuffer,float* ZVector, float* ydim
         float dy=probe_y-yy;
         float dz=probe_z-zz;
         tof=sqrtf(dy*dy+dz*dz)*localParam.slow1; // We invert the speed once as multiplying is faster than dividing
+        // note that this ignores X-coordinates completely! hence, no X-correction is applied whatsoever!
     }
     else if(SurfID==1){
         // FlatZ refraction takes place
@@ -344,12 +345,13 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
 //! Simplex method parameter, controls the way the problem space is explored
     #define sigma 0.5
 
-// Maximum number of iterations for Nelder-Mead search
+// Maximum number of iterations for Nedlder-Mead search
     #define ITERATION_LIMIT 10000
 
 
-    int how = 0;
+    int how = 0; // mode of exploration, changes over iterations.
 
+    // get the initial simplex CF values:
     float vx1 = vx0;
     float vy1 = vy0;
     float fv1 = (*CostFunction)(vx1,vy1,Params);
@@ -362,12 +364,14 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
     float vy3 = vy0+classicMinSearch_spread;
     float fv3 = (*CostFunction)(vx3,vy3,Params);
 
+    // sort the CF points:
     sortArray(fv1,fv2,fv3,vx1,vy1,vx2,vy2,vx3,vy3);
 
 
 
     int loops = 1;
 
+    // begin the exploration:
     while((abs(fv2-fv1) > tolf)|(abs(vx1-vx2)>tolx)|(abs(vy1-vy2)>tolx))
     {
         loops++;
@@ -375,27 +379,34 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
             return (float)fv1; // return best approximation
         }
 
+        // exploration pivot point:
         float xbar = (vx1 + vx2)/2;
         float ybar = (vy1 + vy2)/2;
+        // propose new point:
         float xr = (1 + rho)*xbar - rho*vx3;
         float yr = (1 + rho)*ybar - rho*vy3;
         float fxr = (*CostFunction)(xr,yr,Params);
-
+        // test new point:
         if(fxr<fv1){
+            // fail. make a proposal 2:
             float xe = (1 + rho*chi)*xbar - rho*chi*vx3;
             float ye = (1 + rho*chi)*ybar - rho*chi*vy3;
             float fxe = (*CostFunction)(xe,ye,Params);
+            // test 2nd proposal:
             if (fxe < fxr){
+                // success. Replace the worst point with proposal 2 point.
                 vx3 = xe;
                 vy3 = ye;
                 fv3 = fxe;
             }
             else{
+                // success. Replace the worst point with the proposal 1 point.
                 vx3 = xr;
                 vy3 = yr;
                 fv3 = fxr;}
         }
         else{
+            // a better success: proposal 1 is better than point2 on the simplex.
             if (fxr < fv2){
                 vx3 = xr;
                 vy3 = yr;
@@ -403,10 +414,12 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
             }
             else{
                 if(fxr < fv3){
+                    // make proposal 3:
                     float xc = (1 + psi*rho)*xbar - psi*rho*vx3;
                     float yc = (1 + psi*rho)*ybar - psi*rho*vy3;
                     float fxc = (*CostFunction)(xc,yc,Params);
                     if(fxc <=fxr){
+                        // success. Adopt the proposal 3.
                         vx3 = xc;
                         vy3 = yc;
                         fv3 = fxc;
@@ -417,10 +430,12 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
                     }
                 }
                 else{
+                    // make proposal 4:
                     float xcc = (1-psi)*xbar + psi*vx3;
                     float ycc = (1-psi)*ybar + psi*vx3;
                     double fxcc = (*CostFunction)(xcc,ycc,Params);
                     if(fxcc<fv3){
+                        //success. Adopt the proposal 4.
                         vx3 = xcc;
                         vy3 = ycc;
                         fv3 = fxcc;
@@ -432,6 +447,7 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
 
                 }
                 if(how){
+                    // if all the proposals failed, expand the search area:
                     vx2 = vx1 + sigma*(vx2 - vx1);
                     vy2 = vy1 + sigma*(vy2 - vy1);
                     fv2 = (*CostFunction)(vx2,vy2,Params);
@@ -444,6 +460,7 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
             }
 
         }
+    // make sure that the best point is in position 1 of the simplex:
     sortArray(fv1, fv2, fv3, vx1, vy1, vx2, vy2, vx3, vy3);
     }
     vx0=vx1;
@@ -451,13 +468,15 @@ __device__ __host__ float classicMinSearch(float (*CostFunction)(float&, float& 
     return fv1;
 }
 
+// this is an ultra-simple sorting function, suitable for parallel processors. Takes 3 points and their associated metadata, and sorts.
+// in actuality this is a bubble sort, but hardcoded for the worst-case scenario to avoid "ifs". It still uses conditional swaps tough.
 __device__ __host__ void sortArray(float &fv1, float &fv2, float &fv3, float &vx1, float &vy1, float &vx2, float &vy2, float &vx3, float &vy3)
 {
         swapArray(fv2,vx2,vy2,fv3,vx3,vy3);
         swapArray(fv1,vx1,vy1,fv2,vx2,vy2);
         swapArray(fv2,vx2,vy2,fv3,vx3,vy3);
 }
-
+// Conditional swap of points for the sortArray function.
 __device__ __host__ void swapArray(float &a1,float &a2, float &a3,float &b1,float &b2,float &b3)
 {
         float tmp;
@@ -469,6 +488,9 @@ __device__ __host__ void swapArray(float &a1,float &a2, float &a3,float &b1,floa
         }
 }
 
+// this method converts 17 input points (in A) to 5 coefficients of the polynomial that fits into these points
+// note: this is my original research result. The code has been semi-machine-generated and then hand optimised
+// details are described in a separate report.
 __device__ __host__ void polyfit17x5(double output[5], double A[34])
 {
 

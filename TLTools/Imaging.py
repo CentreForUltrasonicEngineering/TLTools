@@ -11,43 +11,44 @@ from TLTools import parula
 from TLTools import gpustruct
 import warnings
 
+
 class PyTFM:
     def __init__(self):
         # Load up our kernel
-        with open(os.path.dirname(inspect.getfile(gpustruct))+'/'+'TFMKernel.cu','r') as KernelFile:
-            KernelString = KernelFile.read()
+        with open(os.path.dirname(inspect.getfile(gpustruct))+'/'+'TFMKernel.cu', 'r') as KernelFile:
+            kernel_string = KernelFile.read()
         to_include = []
         try:
             if sys.getwindowsversion().major is 10:
                 to_include.append('C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10240.0\\ucrt')
         except AttributeError:
             pass
-        self.Kernel = SourceModule(KernelString, include_dirs=to_include)
+        self.Kernel = SourceModule(kernel_string, include_dirs=to_include)
 
         # Initialise some empty variables
         self.Array = []
         self.FMC = []
         self.V2 = []
 
-        self.Params = gpustruct.GPUStruct([(np.float32,'x1', 0), # Placeholder
-                                    (np.float32,'y1', 0), # Placeholder
-                                    (np.float32,'z1', 0), # Placeholder
-                                    (np.float32,'x2', 0), # Placeholder
-                                    (np.float32,'y2', 0), # Placeholder
-                                    (np.float32,'z2', 0),  # Placeholder
-                                    (np.float32,'slow1', 0), # Placeholder
-                                    (np.float32,'slow2', 0), # Placeholder
-                                    (np.float32,'c0', 0), # Placeholder
-                                    (np.float32,'c1', 0), # Placeholder
-                                    (np.float32,'c2', 0), # Placeholder
-                                    (np.float32,'c3', 0), # Placeholder
-                                    (np.float32,'c4', 0), # Placeholder
-                                    (np.float32,'c5', 0), # Placeholder
-                                    (np.float32,'c6', 0), # Placeholder
-                                    (np.float32,'c7', 0), # Placeholder
-                                    (np.float32,'c7', 0), # Placeholder
-                                    (np.float32,'*DataVector', np.zeros(100,dtype=np.float32)),
-                                    (np.int32,'DataVectorElementCount', 100),])
+        self.Params = gpustruct.GPUStruct([(np.float32, 'x1', 0), # Placeholder
+                                    (np.float32, 'y1', 0),  # Placeholder
+                                    (np.float32, 'z1', 0),  # Placeholder
+                                    (np.float32, 'x2', 0),  # Placeholder
+                                    (np.float32, 'y2', 0),  # Placeholder
+                                    (np.float32, 'z2', 0),  # Placeholder
+                                    (np.float32, 'slow1', 0),  # Placeholder
+                                    (np.float32, 'slow2', 0),  # Placeholder
+                                    (np.float32, 'c0', 0),  # Placeholder
+                                    (np.float32, 'c1', 0),  # Placeholder
+                                    (np.float32, 'c2', 0),  # Placeholder
+                                    (np.float32, 'c3', 0),  # Placeholder
+                                    (np.float32, 'c4', 0),  # Placeholder
+                                    (np.float32, 'c5', 0),  # Placeholder
+                                    (np.float32, 'c6', 0),  # Placeholder
+                                    (np.float32, 'c7', 0),  # Placeholder
+                                    (np.float32, 'c7', 0),  # Placeholder
+                                    (np.float32, '*DataVector', np.zeros(100, dtype=np.float32)),
+                                    (np.int32, 'DataVectorElementCount', 100), ])
 
         # Other variables
         self.blockSize = 128
@@ -69,7 +70,7 @@ class PyTFM:
         self.Fs = 0
         self.Ts = 0
 
-    def TLuploadFMC(self,FMC):
+    def TLuploadFMC(self, FMC):
         thisFMC = FMC.get_FMC()
         x = np.sqrt(thisFMC.shape[0])
         self.n_elem = np.floor(x).astype(np.int32)
@@ -82,7 +83,7 @@ class PyTFM:
         self.donetfm=0
         self.donelog=0
 
-    def upload_FMC(self,FMC):
+    def upload_FMC(self, FMC):
         x = np.sqrt(FMC.shape[0])
         self.n_elem = np.floor(x).astype(np.int32)
         self.sample_length = np.int32(len(FMC[0]))
@@ -109,11 +110,11 @@ class PyTFM:
         self.donetfm=0
         self.donelog=0
         
-    def uploadProbe(self,Array):
+    def uploadProbe(self, Array):
         if not self.doneFMCupload:
             raise Exception('Upload the FMC dataset first')
         self.Array = Array.astype(np.float32)
-        if not Array.shape == (3,self.n_elem):
+        if not Array.shape == (3, self.n_elem):
             raise Exception('Probe locations must be an array in the format 3 by n, where n is the number of elements')
         self.Array[1] = self.Array[1] - np.mean(self.Array[1])
         # We need the unflattened array for later
@@ -139,18 +140,21 @@ class PyTFM:
             self.Params.slow1 = 1/self.V1
         except KeyError:
              raise Exception('One or more neccessary variables were not defined')
+
         if 'Ts' not in kwargs and self.TLFMC is 0:
             raise Exception('Time start was not defined')
         elif 'Ts' in kwargs:
             self.Ts = np.float32(kwargs['Ts'])
 
         if 'Fs' not in kwargs and self.TLFMC is 0:
-            raise Exception('Sampling frequency was not defined')
+            raise Exception('FMC Sampling frequency was not defined')
         elif 'Fs' in kwargs:
             self.Fs = np.float32(kwargs['Fs'])
+
         if 'Velocity2' in kwargs:
             self.V2 = kwargs['Velocity2']
             self.Params.slow2 = 1/self.V2
+
         self.setparams = 1
         self.donecoeffs = 0
         self.donetfm=0
@@ -163,39 +167,48 @@ class PyTFM:
         if 'Velocity2' in kwargs:
             self.V2 = kwargs['Velocity2']
             self.Params.slow2 = 1/self.V2
+
         if 'RefractionType' not in kwargs:
             self.refractionType = 0
             return
+
         testStr = str.lower(kwargs['RefractionType'])
         if testStr == 'none':
             self.refractionType = 0
+
         elif testStr == 'flat':
             self.refractionType = 1
+
         elif testStr == 'peritem':
             self.refractionType = 2
         else:
-            raise Exception('Unknown refraction type')   
+            raise Exception('Unknown refraction type')
+
         if self.refractionType is not 0 and not self.V2:
             raise Exception('You need to define a second wave speed before you enable refraction')
-        
 
-    def setImage(self,**kwargs):
-        squares = ['nPixels','yExtend','zExtend']
-        anchor1 = ['y0','dy','y1','z0','dz','z1']
-        anchor2 = ['y0','ny','y1','z0','nz','z1']
-        if all (term in kwargs for term in squares):
+    def setImage(self, **kwargs):
+        # this is to enable a few different ways the image location can be defined:
+        squares = ['nPixels', 'yExtend', 'zExtend']
+        anchor1 = ['y0', 'dy', 'y1', 'z0', 'dz', 'z1']
+        anchor2 = ['y0', 'ny', 'y1', 'z0', 'nz', 'z1']
+        if all(term in kwargs for term in squares):  # check if kwargs contains all the items in "squares"
+            # version where one specifies extent of the image from the y-oriented array, and from zero
             if not self.doneProbeupload:
                 raise Exception('The array needs to be uploaded before these options can be used')
             self.ny = np.int32(kwargs['nPixels'])
             self.nz = np.int32(kwargs['nPixels'])
+            # create y coordinates of the image as that far to the left and to the right of the edges of the array:
             self.y = np.linspace(min(self.Array[1])-kwargs['yExtend'],max(self.Array[1])+kwargs['yExtend'],self.ny).astype(np.float32)
+            # create z coordinates of the image as that far in Z direction from zero.
             self.z = np.linspace(0,kwargs['zExtend'],self.nz).astype(np.float32)
-        elif all (term in kwargs for term in anchor1):
+
+        elif all(term in kwargs for term in anchor1): # check if kwargs contains all the items in "anchor1"
             self.ny = np.int32(np.ceil((kwargs['y1'] - kwargs['y0'])/kwargs['dy']))
             self.nz = np.int32(np.ceil((kwargs['z1'] - kwargs['z0'])/kwargs['dz']))
             self.y = np.linspace(kwargs['y0'],kwargs['y1'],self.ny).astype(np.float32)
             self.z = np.linspace(kwargs['z0'],kwargs['z1'],self.nz).astype(np.float32)
-        elif all (term in kwargs for term in anchor2):
+        elif all(term in kwargs for term in anchor2):
             self.ny = np.int32(kwargs['ny'])
             self.nz = np.int32(kwargs['nz'])
             self.y = np.linspace(kwargs['y0'],kwargs['y1'],self.ny).astype(np.float32)
@@ -216,10 +229,15 @@ class PyTFM:
     def doCoeffs(self):
         if not self.setimage or not self.doneProbeupload or not self.setparams:
             raise Exception('We can''t calculate the coefficients without first defining everything necessary')
-        TimeBuffer = np.zeros((self.ny,self.n_elem,33)).astype(np.float32).flatten()
-        TimeBufferSize = TimeBuffer.nbytes
-        self.TimeBuffer_gpu = cuda.mem_alloc(TimeBufferSize)
-        nTimePoints = len(TimeBuffer)
+
+        # NOTE : there is a constant here. 33 == COEFFGEN_nTimePointsPerToFit + COEFFGEN_nTimePointsPerToCheck
+        # NOTE 2: The 'check' points could as well be optimised-out later. I only needed that many points for research purposes!
+        timeBuffer = np.zeros((self.ny,self.n_elem,33)).astype(np.float32).flatten()
+
+        timeBufferSize = timeBuffer.nbytes
+        self.TimeBuffer_gpu = cuda.mem_alloc(timeBufferSize)
+        nTimePoints = len(timeBuffer)
+        # NOTE: Again, there is the constant here: 33 == COEFFGEN_nTimePointsPerToFit + COEFFGEN_nTimePointsPerToCheck
         self.ZVector = np.linspace(min(self.z),max(self.z),33).astype(np.float32).flatten()
         self.Params.copy_to_gpu()
         ParamsInput = self.Params.get_ptr()
@@ -227,6 +245,7 @@ class PyTFM:
         GenerateTimePoints = self.Kernel.get_function("GenerateTimePoints")
         GetCoeffs =  self.Kernel.get_function("transform_tpoints_into_coeffs2GPU_kernel")
         total_coefflines = self.ny*self.n_elem
+        # NOTE: Constant here : 5 = COEFF_SIZE
         CoeffArray = np.zeros((self.ny,self.n_elem,5)).astype(np.float32).flatten()
         CoeffSize = CoeffArray.nbytes
         self.Coeff_gpu = cuda.mem_alloc(CoeffSize)
@@ -274,10 +293,10 @@ class PyTFM:
             except:
                 raise Exception('The coefficients could not be calculated for this TFM image')
         TFM_coeff = self.Kernel.get_function("TFM_coeff")
-        t = time.time()
+        # t = time.time()
         TFM_coeff(cuda.Out(self.TFM_image), cuda.In(self.FMC), cuda.In(self.ArrayGPU), self.n_elem, self.Fs, cuda.In(self.z), self.nz, self.sample_length, self.Ts, self.Coeff_gpu,block=(self.blockSize,1,1), grid=(self.gridSize,1))
-        #elapsed = time.time() - t
-        #print('TFM took %s seconds' % float('%.3g' % elapsed))
+        # elapsed = time.time() - t
+        # print('TFM took %s seconds' % float('%.3g' % elapsed))
         self.TFM_lin = self.TFM_image.reshape((self.ny,self.nz))
         self.donetfm = 1
         return self.TFM_lin
