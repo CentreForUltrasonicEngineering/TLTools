@@ -1,8 +1,6 @@
-# cueTFM
+# cueTFM: The Centre for Ultrasonic Engineering Total Focussing Method library of code.
 
-The Centre for Ultrasonic Engineering - Total Focussing Method - library.
-
-## Readme : Usage
+## Usage
 
 TODO: basic usage from python.
 TODO: More details in some pythonic repository.
@@ -13,7 +11,16 @@ The cueTFM kernel is written in CUDA for performance.
 
 The reference code is written in Python for easy teaching and debugging.
 
-Lots of historical functionality has been culled, but is still available in Matlab version
+Lots of historical functionality has been culled, but is still mostly available in historical Matlab versions and historical .dll versions
+
+
+cueTFM is a founding library behind cueART.
+
+## Some famous quotes
+
+"It does not make sense to get a wrong result really fast". (that is, "get things working correctly first", or "premature optimisation is the source of all evil")
+
+"Cheap things often turn out to be not so cheap. Getting things for free costs a lot."
 
 ## Some history
 
