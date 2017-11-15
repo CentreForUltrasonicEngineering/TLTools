@@ -31,7 +31,7 @@ ToDo: Write about the history of cuBeam (2008), cuTFM, fminsearch, flatSurface r
 
 ## Authors and contributions
 
-* Dr Jerzy Dziewierz - author of the original idea behind beamsim (early 2008), fminsearch, refraction algorithms, original cuTFM, polyfit, and the cueTFM (coeff-enabled TFM). Experimental validation, documentation, presentations, training sessions, consultations e.t.c.; primary go-to person for in-depth questions.
+* Dr Jerzy Dziewierz - author of the original idea behind beamsim (mid 2008), fminsearch, refraction algorithms, original cuTFM, polyfit, and the cueTFM (coeff-enabled TFM). Experimental validation, documentation, presentations, training sessions, consultations e.t.c.; primary go-to person for in-depth questions.
 * Dr Timothy Lardner - contributor to the cueTFM coeff table factorizing method; Developer of the .dll and then, the Python interface up until mid-2017. 
 * Dr Ailidh McGilp - debugging, developing of the 3D peritem surface technology. Spreading the word, and first real industrial application.
 * Marcus Ingram - debugging.
